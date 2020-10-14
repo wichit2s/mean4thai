@@ -19,8 +19,21 @@ services:
     depends_on:
       - mongo
 
+  meanexpress:
+    container_name: meanexpress
+    image: mongo-express
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_AUTH_DATABASE: odmp
+      #ME_CONFIG_MONGODB_AUTH_USERNAME: admin
+      #ME_CONFIG_MONGODB_AUTH_PASSWORD: pass
+    restart: always
+    depends_on:
+      - mongo
+
   mongo:
-    container_name: mongo36
+    container_name: meanmongo
     image: mongo:3.6
     ports:
       - 27017:27017
