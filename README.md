@@ -1,93 +1,170 @@
-## MEAN Stack
+# การเพิ่ม model ชื่อ Student ใน project
 
-This is a fork repository from https://github.com/linnovate/mean with modification and instruction for Thai students.
+## 1. เพิ่มไฟล์ `server/models/student.model.js` 
 
-- **M**ongoDB : Document NoSQL database
-- **E**xpress (Express.js): Back-end web server framework in js
-- **A**ngular : Front-end web app framework in typescript
-- **N**ode.js : JavaScript runtime environment
+```js
+const mongoose = require('mongoose');
 
-### สิ่งที่ต้องใช้
-* docker - [ติดตั้ง](https://docs.docker.com/get-docker/) .  
-* docker-compose - [ติดตั้ง](https://docs.docker.com/compose/install/) .  
-* git - [ติดตั้ง](https://www.linode.com/docs/development/version-control/how-to-install-git-on-linux-mac-and-windows/) .  
-* node.js - [ติดตั้ง](https://nodejs.org/en/download/) .  
-* yarn - [ติดตั้ง](https://yarnpkg.com/lang/en/docs/install) .  
+/**
+ * อ่านเพิ่มเติม https://mongoosejs.com/docs/guide.html
+ */
+const StudentSchema = new mongoose.Schema(
+  {
+    sid:       { type: String, required: true },
+    first:     { type: String, required: true },
+    last:      { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  {
+    versionKey: false
+  }
+);
 
-``` 
-npm i -g yarn 
+
+module.exports = mongoose.model('Student', StudentSchema);
 ```
 
-### การติดตั้ง 
+## 2. เพิ่มไฟล์ `server/controllers/student.controller.js`
 
-``` 
-git clone https://github.com/wichit2s/mean4thai
-cd mean4thai
+```js
+const Joi = require('joi');
+const Student = require('../models/student.model');
+
+const studentSchema = Joi.object({
+  sid: Joi.number().integer().required(),
+  first: Joi.string().required(),
+  last: Joi.string().required()
+})
+
+
+module.exports = {
+  insert,
+  get,
+  getAll,
+  search,
+}
+
+async function insert(student) {
+  student = await Joi.validate(student, studentSchema, { abortEarly: false });
+  return await new Student(student).save();
+}
+
+/**
+ * อ่านเพิ่มเติม https://mongoosejs.com/docs/api.html
+ */
+async function get(sid) {
+  return await Student.find({sid: sid});
+}
+
+async function getAll() {
+  return await Student.find();
+}
+
+async function search(key, value) {
+  let query = {};
+  query[key] = value;
+  return await Student.find(query);
+}
+
 ```
 
-### เริ่มพัฒนา
+## 3. เพิ่มไฟล์ `server/routes/student.route.js`
 
-1. สร้าง image,containers ที่จำเป็นด้วย docker-compose
+```js
+const express = require('express');
+const asyncHandler = require('express-async-handler');
+const studentCtrl = require('../controllers/student.controller');
 
-``` 
-docker-compose up -d 
+const router = express.Router();
+module.exports = router;
+
+//router.use(passport.authenticate('jwt', { session: false }))
+
+router.route('/').post(asyncHandler(insert));
+router.route('/get/:sid(\d+)').get(asyncHandler(get));
+router.route('/all').get(asyncHandler(getAll));
+router.route('/search').get(asyncHandler(search));
+
+
+async function insert(req, res) {
+  let student = await studentCtrl.insert(req.body);
+  res.json(student);
+}
+
+async function get(req, res) {
+  let all_students = await studentCtrl.get(req.params['sid']);
+  res.json(all_students);
+}
+
+async function getAll(req, res) {
+  let all_students = await studentCtrl.getAll();
+  res.json(all_students);
+}
+
+async function search(req, res) {
+  let result = await studentCtrl.search(req.params['key'], req.params['value']);
+  res.json(result);
+}
+
 ```
 
-คำสั่งนี้จะ
+## 4. เพิ่มเส้นทางการเรียกในไฟล์ `server/routes/index.route.js`
 
-   * สร้างและเรียกใช้งาน container ชื่อ __mean__ จาก image ชื่อ __mean__ ที่นิยามใน [Dockerfile](./Dockerfile)
+```js
+const express = require('express');
+const userRoutes = require('./user.route');
+const studentRoutes = require('./student.route');
+const authRoutes = require('./auth.route');
 
-   * สร้างและเรียกใช้งาน container ชื่อ __mongo36__ จาก image ชื่อ __mongo__ จาก [mongo docker hub](https://hub.docker.com/_/mongo)
+const router = express.Router(); // eslint-disable-line new-cap
 
+/** GET /health-check - Check service health */
+router.get('/health-check', (req, res) =>
+  res.send('OK')
+);
 
-2. ปิด container ชื่อ __mean__ เพื่อเริ่มพัฒนา
+router.use('/auth', authRoutes);
+router.use('/user', userRoutes);
+router.use('/student', studentRoutes);
 
-``` 
-docker stop mean
+module.exports = router;
 ```
 
-3. ตรวจสอบว่ายังสามารถใช้ __mongo36__ ได้
+## 5. ตัวอย่างสคริปเพื่อกำหนดข้อมูลเบื้องต้น `scripts/init-students.js`
 
-``` 
-docker exec mongo36 mongo --version
+```js
+const mongoose = require('mongoose');
+const util = require('util');
+const debug = require('debug')('express-mongoose-es6-rest-api:index');
+
+const config = require('../server/config/config');
+
+const Student = require('../server/models/student.model');
+
+// connect to mongo db
+const mongoUri = config.mongo.host;
+mongoose.connect(mongoUri, { keepAlive: 1 });
+mongoose.connection.on('error', () => {
+  throw new Error(`unable to connect to database: ${mongoUri}`);
+});
+
+
+const students = [
+  { sid: 60112233440, first: 'ชูใจ', last: 'เลิศล้ำ' },
+  { sid: 60112233441, first: 'มานี', last: 'รักเผ่าไทย' },
+  { sid: 60112233442, first: 'ปิติ', last: 'พิทักษ์ถิ่น' },
+  { sid: 60112233443, first: 'มานะ', last: 'รักเผ่าไทย' },
+  { sid: 60112233444, first: 'วีระ', last: 'ประสงค์สุข' }
+];
+
+Student.insertMany(students, (error, docs) => {
+  if (error) {
+    console.error(error);
+  } else {
+    console.log(docs);
+  }
+  mongoose.connection.close();
+});
 ```
 
-4. ติดตั้งชุดคำสั่งที่จำเป็น
-
-``` 
-yarn install
-```
-
-5. สั่งเริ่มพัฒนา ดูผลลัพธ์ได้ที่  http://localhost:4040/
-
-``` 
-yarn start
-```
-
-6. เริ่มพัฒนาเว็บตามหลักการของ angular framework
-
-   * คำสั่งสร้างหน้าใหม่ ชื่อ about
-
-``` 
-ng g c about
-```
-
-   * คำสั่งสร้าง service ใหม่ 
-
-``` 
-ng g service myservice
-```
-
-   * คำสั่งสร้าง model ใหม่ Student
-
-``` 
-ng g model Student
-```
-
-   * อื่นๆ เพิ่มเติม ที่ https://angular.io/
-
-
-### Credits 
-- The MEAN name was coined by Valeri Karpov.
-- Initial concept and development was done by Amos Haviv and sponsered by Linnovate.
-- Inspired by the great work of Madhusudhan Srinivasa.
+## 6. เรียกดูข้อมูลได้จาก `http://localhost:4000/api/student/all`
