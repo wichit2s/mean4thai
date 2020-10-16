@@ -167,4 +167,10 @@ Student.insertMany(students, (error, docs) => {
 });
 ```
 
-## 6. เรียกดูข้อมูลได้จาก `http://localhost:4000/api/student/all`
+## 6. เรียกใช้ `scripts/init-students.js` 
+
+```sh
+node scripts/init-students.js
+```
+
+## 7. เรียกดูข้อมูลได้จาก `http://localhost:4000/api/student/all`
