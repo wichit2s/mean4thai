@@ -4,16 +4,21 @@ import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from './shared/guards';
 import { HomeComponent } from './home/home.component';
 import { HeroComponent } from './hero/hero.component';
+import { StudentComponent } from './student/student.component';
 
 const routes: Routes = [
   {
     path: '',
     component: HomeComponent,
-    //canActivate: [AuthGuard],
+    canActivate: [AuthGuard],
   },
   {
     path: 'hero',
     component: HeroComponent,
+  },
+  {
+    path: 'student',
+    component: StudentComponent,
   },
   {
     path: 'auth',

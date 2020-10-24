@@ -1,0 +1,9 @@
+.student-header-image {
+  background-image: url('https://wichit2s.gitlab.io/assets/images/paul_profile_96x96.png');
+  background-size: cover;
+}
+
+:host >>> .mat-figure{
+  align-items: start !important;
+}
+

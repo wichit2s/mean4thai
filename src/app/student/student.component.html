@@ -1,0 +1,23 @@
+<!--
+  <div>{{ students | json }}</div>
+-->
+<mat-grid-list cols="3" rowHeight="720px" gutterSize="10px">
+  <mat-grid-tile *ngFor="let s of students">
+    <mat-card>
+      <mat-card-header>
+        <div mat-card-avatar class="student-header-image"></div>
+        <mat-card-title>{{ s.first }} {{ s.last }}</mat-card-title>
+        <mat-card-subtitle>{{ s.sid }}</mat-card-subtitle>
+      </mat-card-header>
+      <img mat-card-image src="https://picsum.photos/id/{{ s.sid%1000 }}/750/600" alt="Photo of a {{ s.name }}">
+      <mat-card-content>
+        <p> {{ s.info }} </p>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button>LIKE</button>
+        <button mat-button>SHARE</button>
+      </mat-card-actions>
+    </mat-card>
+  </mat-grid-tile>
+</mat-grid-list>
+
